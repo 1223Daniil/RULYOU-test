@@ -8,6 +8,7 @@ import {
   Patch,
   Delete,
   ParseIntPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -41,18 +42,11 @@ export class UsersController {
 
   @Get('get/:id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    try {
-      const user = await this.usersService.findOne(id);
-      if (!user) {
-        return {
-          success: false,
-          result: { error: `User with id ${id} not found` },
-        };
-      }
-      return { success: true, result: { users: [user] } };
-    } catch (error) {
-      return { success: false, result: { error: error.message } };
+    const user = await this.usersService.findOne(id);
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
+    return { success: true, result: { users: [user] } };
   }
 
   @Patch('update/:id')
@@ -60,53 +54,38 @@ export class UsersController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
   ) {
-    try {
-      // Проверить существование, если нужно:
-      const existing = await this.usersService.findOne(id);
-      if (!existing) {
-        return {
-          success: false,
-          result: { error: `User with id ${id} not found` },
-        };
-      }
-      const user = await this.usersService.update(id, dto);
-      return {
-        success: true,
-        result: {
-          id: user.id,
-          full_name: user.full_name,
-          role: user.role,
-          efficiency: user.efficiency,
-        },
-      };
-    } catch (error) {
-      return { success: false, result: { error: error.message } };
+    const existing = await this.usersService.findOne(id);
+    if (!existing) {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
+    const user = await this.usersService.update(id, dto);
+    return {
+      success: true,
+      result: {
+        id: user.id,
+        full_name: user.full_name,
+        role: user.role,
+        efficiency: user.efficiency,
+      },
+    };
   }
 
   @Delete('delete/:id')
   async remove(@Param('id', ParseIntPipe) id: number) {
-    try {
-      const existing = await this.usersService.findOne(id);
-      if (!existing) {
-        return {
-          success: false,
-          result: { error: `User with id ${id} not found` },
-        };
-      }
-      const user = await this.usersService.remove(id);
-      return {
-        success: true,
-        result: {
-          id: user.id,
-          full_name: user.full_name,
-          role: user.role,
-          efficiency: user.efficiency,
-        },
-      };
-    } catch (error) {
-      return { success: false, result: { error: error.message } };
+    const existing = await this.usersService.findOne(id);
+    if (!existing) {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
+    const user = await this.usersService.remove(id);
+    return {
+      success: true,
+      result: {
+        id: user.id,
+        full_name: user.full_name,
+        role: user.role,
+        efficiency: user.efficiency,
+      },
+    };
   }
 
   @Delete('delete')
